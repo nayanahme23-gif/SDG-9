@@ -28,6 +28,7 @@ const Navbar = () => {
                     {/* Desktop Menu */}
                     <div className="hidden md:flex space-x-8 items-center">
                         <Link to="/courses" className={`text-sm tracking-wide ${isActive('/courses')}`}>COURSES</Link>
+                        <Link to="/projects" className={`text-sm tracking-wide ${isActive('/projects')}`}>PROJECTS</Link>
                         {isAuthenticated && (
                             <>
                                 <Link to="/dashboard" className={`text-sm tracking-wide ${isActive('/dashboard')}`}>DASHBOARD</Link>
@@ -68,6 +69,7 @@ const Navbar = () => {
                 {isMenuOpen && (
                     <div className="md:hidden mt-4 pb-4 space-y-4 animate-fade-in border-t border-gray-800 pt-4">
                         <Link onClick={() => setIsMenuOpen(false)} to="/courses" className={`block py-2 ${isActive('/courses')}`}>COURSES</Link>
+                        <Link onClick={() => setIsMenuOpen(false)} to="/projects" className={`block py-2 ${isActive('/projects')}`}>PROJECTS</Link>
                         {isAuthenticated && (
                             <>
                                 <Link onClick={() => setIsMenuOpen(false)} to="/dashboard" className={`block py-2 ${isActive('/dashboard')}`}>DASHBOARD</Link>

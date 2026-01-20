@@ -48,6 +48,23 @@ exports.createCourse = async (req, res, next) => {
             req.body.image = req.file.path;
         }
 
+        // Parse JSON strings from FormData
+        if (req.body.content && typeof req.body.content === 'string') {
+            try {
+                req.body.content = JSON.parse(req.body.content);
+            } catch (e) {
+                console.error('Error parsing content JSON', e);
+            }
+        }
+
+        if (req.body.quizzes && typeof req.body.quizzes === 'string') {
+            try {
+                req.body.quizzes = JSON.parse(req.body.quizzes);
+            } catch (e) {
+                console.error('Error parsing quizzes JSON', e);
+            }
+        }
+
         const course = await Course.create(req.body);
 
         res.status(201).json({
@@ -74,6 +91,28 @@ exports.updateCourse = async (req, res, next) => {
         // if (course.instructor.toString() !== req.user.id && req.user.role !== 'admin') {
         //   return res.status(401).json({ success: false, error: `User ${req.user.id} is not authorized to update this course` });
         // }
+
+        // Check if image uploaded
+        if (req.file) {
+            req.body.image = req.file.path;
+        }
+
+        // Parse JSON strings from FormData
+        if (req.body.content && typeof req.body.content === 'string') {
+            try {
+                req.body.content = JSON.parse(req.body.content);
+            } catch (e) {
+                console.error('Error parsing content JSON', e);
+            }
+        }
+
+        if (req.body.quizzes && typeof req.body.quizzes === 'string') {
+            try {
+                req.body.quizzes = JSON.parse(req.body.quizzes);
+            } catch (e) {
+                console.error('Error parsing quizzes JSON', e);
+            }
+        }
 
         course = await Course.findByIdAndUpdate(req.params.id, req.body, {
             new: true,

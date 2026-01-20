@@ -33,8 +33,8 @@ router.post('/analyze', upload.single('image'), (req, res) => {
     const scriptPath = path.join(__dirname, '..', 'scripts', 'predict.py');
 
     // Spawn Python process
-    // Ensuring we use 'python' command (might need 'python3' on some systems, but 'python' is standard on Windows usually if user did strict setup)
-    const pythonProcess = spawn('python', [scriptPath, imagePath]);
+    // Use 'python3' for Linux/Mac/Docker environments
+    const pythonProcess = spawn('python3', [scriptPath, imagePath]);
 
     let dataString = '';
 

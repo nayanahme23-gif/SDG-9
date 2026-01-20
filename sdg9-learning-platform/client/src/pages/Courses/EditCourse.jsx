@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
-const CreateCourse = () => {
+const EditCourse = () => {
+    const { id } = useParams();
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         title: '',
@@ -11,9 +12,34 @@ const CreateCourse = () => {
         quizzes: []
     });
     const [imageFile, setImageFile] = useState(null);
+    const [currentImage, setCurrentImage] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     const { title, description, content, quizzes } = formData;
+
+    useEffect(() => {
+        const fetchCourse = async () => {
+            try {
+                const res = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/courses/${id}`);
+                const course = res.data.data;
+                setFormData({
+                    title: course.title,
+                    description: course.description,
+                    content: course.content || [],
+                    quizzes: course.quizzes || []
+                });
+                setCurrentImage(course.image);
+            } catch (err) {
+                console.error(err);
+                alert('Failed to load course');
+                navigate('/courses');
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchCourse();
+    }, [id, navigate]);
 
     const onChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
     const onFileChange = e => setImageFile(e.target.files[0]);
@@ -68,24 +94,11 @@ const CreateCourse = () => {
         const token = localStorage.getItem('token');
 
         try {
-            // Create FormData to send file + text
             const data = new FormData();
             data.append('title', title);
             data.append('description', description);
-            // Since 'content' is array of objects, we need to stringify or append loop. 
-            // Better to append individual fields if backend parser supports it, but usually backend expects specific structure.
-            // But express body-parser doesn't handle mixed multipart/json well unless we parse manually.
-            // Multer handles file, but messes up nested objects.
-            // Strategy: Send content as JSON string and parse it in backend or separate fields?
-            // Let's send content as JSON string and verify backend parsing, OR loop over it.
-            // Backend `req.body` with multer usually flattens it.
-            // A common trick: JSON.stringify array and send as 'content' field.
-            // NOTE: We need to ensure backend body-parser runs AFTER multer or multer allows fields.
-            // Multer handles fields too.
-            // Let's JSON stringify the complex array.
-            // Wait, standard `create` might expect array.
-            // Let's iterate.
-            // Strategy: Send content and quizzes as JSON strings to preserve structure
+
+            // Send as JSON strings
             data.append('content', JSON.stringify(content));
             data.append('quizzes', JSON.stringify(quizzes));
 
@@ -93,31 +106,31 @@ const CreateCourse = () => {
                 data.append('image', imageFile);
             }
 
-            // Fallback for simple content array parsing if backend expects raw JSON body (which multer blocks)
-            // Actually, best to JSON stringify it if we rewrite controller to parse it. 
-            // But since we are using std URL params, let's try strict mapping or just simple appends.
-
-            await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/courses`, data, {
+            await axios.put(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/courses/${id}`, data, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
                 }
             });
-            navigate('/courses');
+            navigate(`/courses/${id}`);
         } catch (err) {
             console.error(err);
-            alert(err.response?.data?.error || 'Failed to create course');
+            alert(err.response?.data?.error || 'Failed to update course');
         } finally {
             setSubmitting(false);
         }
     };
 
+    if (loading) return <div className="text-white text-center py-20">Loading...</div>;
+
     return (
         <div className="max-w-4xl mx-auto px-4 py-8">
             <div className="glass-card rounded-3xl p-8 border border-gray-700/50">
-                <div className="mb-8 border-b border-gray-700 pb-6">
-                    <h1 className="text-3xl font-bold text-white mb-2">Create New Course</h1>
-                    <p className="text-gray-400">Share your knowledge about sustainable infrastructure.</p>
+                <div className="mb-8 border-b border-gray-700 pb-6 flex justify-between items-center">
+                    <div>
+                        <h1 className="text-3xl font-bold text-white mb-2">Edit Course</h1>
+                        <p className="text-gray-400">Update course content and quizzes.</p>
+                    </div>
                 </div>
 
                 <form onSubmit={onSubmit} className="space-y-8">
@@ -132,7 +145,6 @@ const CreateCourse = () => {
                                 value={title}
                                 onChange={onChange}
                                 className="w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-xl focus:ring-2 focus:ring-accent-blue text-white"
-                                placeholder="e.g. Introduction to Earthquake Resistant Design"
                                 required
                             />
                         </div>
@@ -144,12 +156,14 @@ const CreateCourse = () => {
                                 onChange={onChange}
                                 rows="4"
                                 className="w-full px-4 py-3 bg-gray-900/50 border border-gray-600 rounded-xl focus:ring-2 focus:ring-accent-blue text-white"
-                                placeholder="What will students learn in this course?"
                                 required
                             ></textarea>
                         </div>
                         <div>
                             <label className="block text-sm text-gray-400 mb-2">Course Cover Image</label>
+                            {currentImage && (
+                                <img src={currentImage.startsWith('http') ? currentImage : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/${currentImage}`} alt="Current" className="h-20 w-32 object-cover rounded mb-2" />
+                            )}
                             <input
                                 type="file"
                                 name="image"
@@ -174,7 +188,7 @@ const CreateCourse = () => {
 
                         {content.length === 0 && (
                             <div className="text-center py-10 border-2 border-dashed border-gray-700 rounded-xl bg-gray-800/20">
-                                <p className="text-gray-500">No modules added yet. Click "Add Module" to begin.</p>
+                                <p className="text-gray-500">No modules added yet.</p>
                             </div>
                         )}
 
@@ -188,40 +202,36 @@ const CreateCourse = () => {
                                 >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                 </button>
-
                                 <h4 className="text-white font-bold mb-4 flex items-center gap-2">
                                     <span className="bg-gray-700 text-xs w-6 h-6 flex items-center justify-center rounded-full">{index + 1}</span>
                                     Module {index + 1}
                                 </h4>
-
                                 <div className="space-y-4">
-                                    <div>
-                                        <input
-                                            type="text"
-                                            name="title"
-                                            value={module.title}
-                                            onChange={(e) => onContentChange(index, e)}
-                                            placeholder="Module Title (e.g. Chapter 1: Foundation)"
-                                            className="w-full px-4 py-2 bg-gray-900/50 border border-gray-600 rounded-lg text-white text-sm focus:border-accent-blue focus:ring-1 focus:ring-accent-blue outline-none"
-                                            required
-                                        />
-                                    </div>
+                                    <input
+                                        type="text"
+                                        name="title"
+                                        value={module.title}
+                                        onChange={(e) => onContentChange(index, e)}
+                                        placeholder="Module Title"
+                                        className="w-full px-4 py-2 bg-gray-900/50 border border-gray-600 rounded-lg text-white text-sm focus:border-accent-blue focus:ring-1 focus:ring-accent-blue outline-none"
+                                        required
+                                    />
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <input
                                             type="text"
                                             name="videoUrl"
                                             value={module.videoUrl}
                                             onChange={(e) => onContentChange(index, e)}
-                                            placeholder="Video Embed URL (Optional)"
-                                            className="w-full px-4 py-2 bg-gray-900/50 border border-gray-600 rounded-lg text-white text-sm focus:border-accent-blue focus:ring-1 focus:ring-accent-blue outline-none"
+                                            placeholder="Video URL"
+                                            className="w-full px-4 py-2 bg-gray-900/50 border border-gray-600 rounded-lg text-white text-sm"
                                         />
                                         <input
                                             type="text"
                                             name="materialUrl"
                                             value={module.materialUrl}
                                             onChange={(e) => onContentChange(index, e)}
-                                            placeholder="Study Material/PDF URL (Optional)"
-                                            className="w-full px-4 py-2 bg-gray-900/50 border border-gray-600 rounded-lg text-white text-sm focus:border-accent-blue focus:ring-1 focus:ring-accent-blue outline-none"
+                                            placeholder="Material URL"
+                                            className="w-full px-4 py-2 bg-gray-900/50 border border-gray-600 rounded-lg text-white text-sm"
                                         />
                                     </div>
                                 </div>
@@ -244,7 +254,7 @@ const CreateCourse = () => {
 
                         {quizzes.length === 0 && (
                             <div className="text-center py-6 border-2 border-dashed border-gray-700 rounded-xl bg-gray-800/20">
-                                <p className="text-gray-500">No quiz questions added. Add questions to test student knowledge.</p>
+                                <p className="text-gray-500">No quiz questions added.</p>
                             </div>
                         )}
 
@@ -258,19 +268,17 @@ const CreateCourse = () => {
                                 >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
                                 </button>
-
                                 <div>
                                     <label className="block text-xs uppercase text-gray-500 mb-1">Question {qIndex + 1}</label>
                                     <input
                                         type="text"
                                         value={quiz.question}
                                         onChange={(e) => onQuizChange(qIndex, 'question', e.target.value)}
-                                        placeholder="Enter question text..."
+                                        placeholder="Question"
                                         className="w-full px-4 py-2 bg-gray-900/50 border border-gray-600 rounded-lg text-white text-sm focus:border-accent-blue focus:ring-1 focus:ring-accent-blue outline-none"
                                         required
                                     />
                                 </div>
-
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {quiz.options.map((option, oIndex) => (
                                         <div key={oIndex} className="flex items-center gap-2">
@@ -286,7 +294,7 @@ const CreateCourse = () => {
                                                 value={option}
                                                 onChange={(e) => onOptionChange(qIndex, oIndex, e.target.value)}
                                                 placeholder={`Option ${oIndex + 1}`}
-                                                className="flex-1 px-3 py-2 bg-gray-900/50 border border-gray-600 rounded-lg text-white text-sm focus:border-accent-blue focus:ring-1 focus:ring-accent-blue outline-none"
+                                                className="flex-1 px-3 py-2 bg-gray-900/50 border border-gray-600 rounded-lg text-white text-sm"
                                                 required
                                             />
                                         </div>
@@ -302,7 +310,7 @@ const CreateCourse = () => {
                             disabled={submitting}
                             className="w-full bg-gradient-to-r from-brand-cyan to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold py-4 rounded-xl shadow-lg transform hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {submitting ? 'Creating Course...' : 'Publish Course'}
+                            {submitting ? 'Updating Course...' : 'Update Course'}
                         </button>
                     </div>
                 </form>
@@ -311,4 +319,4 @@ const CreateCourse = () => {
     );
 };
 
-export default CreateCourse;
+export default EditCourse;

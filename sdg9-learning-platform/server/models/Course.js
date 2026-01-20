@@ -26,6 +26,24 @@ const courseSchema = new mongoose.Schema({
             materialUrl: String
         }
     ],
+    quizzes: [
+        {
+            question: {
+                type: String,
+                required: true
+            },
+            options: [
+                {
+                    type: String,
+                    required: true
+                }
+            ],
+            correctAnswer: {
+                type: Number,
+                required: true
+            }
+        }
+    ],
     createdAt: {
         type: Date,
         default: Date.now

@@ -5,7 +5,11 @@ import Dashboard from './pages/Dashboard';
 import CrackAnalysis from './pages/CrackAnalysis';
 import CourseList from './pages/Courses/CourseList';
 import CreateCourse from './pages/Courses/CreateCourse';
+import EditCourse from './pages/Courses/EditCourse';
 import CourseDetail from './pages/Courses/CourseDetail';
+import ProjectList from './pages/Projects/ProjectList';
+import CreateProject from './pages/Projects/CreateProject';
+import ProjectDetail from './pages/Projects/ProjectDetail';
 import Home from './pages/Home';
 import Navbar from './components/Navbar';
 
@@ -22,7 +26,11 @@ function App() {
             <Route path="/crack-analysis" element={<CrackAnalysis />} />
             <Route path="/courses" element={<CourseList />} />
             <Route path="/courses/create" element={<CreateCourse />} />
+            <Route path="/courses/edit/:id" element={<EditCourse />} />
             <Route path="/courses/:id" element={<CourseDetail />} />
+            <Route path="/projects" element={<ProjectList />} />
+            <Route path="/projects/create" element={<CreateProject />} />
+            <Route path="/projects/:id" element={<ProjectDetail />} />
             <Route path="/" element={<Home />} />
           </Routes>
         </div>

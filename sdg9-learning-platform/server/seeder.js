@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 // colors is optional, removing dependency if not installed or keeping it simple
 const User = require('./models/User');
 const Course = require('./models/Course');
+const Project = require('./models/Project');
 const connectDB = require('./config/db');
 
 // Load env vars
@@ -56,8 +57,25 @@ const courses = [
             },
             {
                 title: 'Sustainable Cities and Communities',
-                videoUrl: 'https://youtu.be/qRf9ArbfkjU?si=jrgLoKWyqJLAy13f',
+                videoUrl: 'https://youtu.be/qRfArbfkjU?si=jrgLoKWyqJLAy13f',
                 materialUrl: 'https://example.com/sustainable-cities'
+            }
+        ],
+        quizzes: [
+            {
+                question: "What is the primary goal of SDG 9?",
+                options: ["To eradicate poverty", "To build resilient infrastructure", "To promote gender equality", "To protect marine life"],
+                correctAnswer: 1
+            },
+            {
+                question: "Which technology is a key driver for sustainable industrialization?",
+                options: ["Steam Engine", "AI and Automation", "Typewriter", "Telescope"],
+                correctAnswer: 1
+            },
+            {
+                question: "Innovation in infrastructure leads to:",
+                options: ["Economic Growth", "Environmental Degradation", "Resource Depletion", "Higher Unemployment"],
+                correctAnswer: 0
             }
         ]
     },
@@ -76,6 +94,18 @@ const courses = [
                 videoUrl: 'https://youtu.be/xubK4T9Nc8A?si=-D_RVgX0QF3mpwic',
                 materialUrl: 'https://example.com/case-study'
             }
+        ],
+        quizzes: [
+            {
+                question: "Which AI technique is commonly used for crack detection?",
+                options: ["Natural Language Processing", "Computer Vision (CNN)", "Reinforcement Learning", "Market Basket Analysis"],
+                correctAnswer: 1
+            },
+            {
+                question: "Why is early crack detection important?",
+                options: ["It looks better", "Prevents structural failure", "Increases property tax", "It's a legal requirement"],
+                correctAnswer: 1
+            }
         ]
     },
     {
@@ -93,7 +123,50 @@ const courses = [
                 videoUrl: 'https://youtu.be/xubK4T9Nc8A?si=Gv_fa_-WLfO5np89',
                 materialUrl: 'https://example.com/future-construction'
             }
+        ],
+        quizzes: [
+            {
+                question: "What is a benefit of green building?",
+                options: ["High energy consumption", "Reduced carbon footprint", "Increased waste", "Shorter lifespan"],
+                correctAnswer: 1
+            },
+            {
+                question: "Smart cities utilize what to improve efficiency?",
+                options: ["Paper records", "IoT Sensors", "Analog Phones", "Diesel Generators"],
+                correctAnswer: 1
+            }
         ]
+    }
+];
+
+const projects = [
+    {
+        title: 'Smart Energy Grid Monitor',
+        description: 'An IoT-based system to monitor energy consumption in real-time and optimize distribution for sustainable communities.',
+        images: ['https://placehold.co/800x600/312e81/818cf8?text=Energy+Grid', 'https://placehold.co/800x600/1e1b4b/4338ca?text=Grid+Dashboard'],
+        liveLink: 'https://smart-grid-demo.vercel.app'
+    },
+    {
+        title: 'Waste Management AI',
+        description: 'Computer vision application that automatically classifies waste into recyclable and non-recyclable categories to improve processing efficiency.',
+        images: ['https://placehold.co/800x600/064e3b/34d399?text=Waste+AI', 'https://placehold.co/800x600/065f46/10b981?text=Detection+Demo']
+    },
+    {
+        title: 'Resilient Bridge Design',
+        description: 'A structural engineering project proposing a new bridge design capable of withstanding high-magnitude earthquakes using flexible materials.',
+        images: ['https://placehold.co/800x600/7c2d12/fb923c?text=Bridge+Design', 'https://placehold.co/800x600/451a03/d97706?text=Stress+Analysis'],
+        liveLink: 'https://bridge-design-sim.netlify.app'
+    },
+    {
+        title: 'Rural Connectivity Drone',
+        description: 'Prototype of a solar-powered drone designed to provide temporary internet connectivity to remote areas during infrastructure development.',
+        images: ['https://placehold.co/800x600/831843/f472b6?text=Solar+Drone', 'https://placehold.co/800x600/500724/db2777?text=Flight+Path'],
+        liveLink: 'https://drone-flight-log.herokuapp.com'
+    },
+    {
+        title: 'Eco-Friendly Cement Formula',
+        description: 'Research project developing a biological cement alternative that reduces CO2 emissions by 40% using industrial byproducts.',
+        images: ['https://placehold.co/800x600/14532d/86efac?text=Green+Cement', 'https://placehold.co/800x600/14532d/4ade80?text=Lab+Results']
     }
 ];
 
@@ -122,6 +195,17 @@ const importData = async () => {
 
         console.log('Courses Imported...');
 
+        // Create Projects (Assigned to Student)
+        const studentUser = createdUsers.find(u => u.role === 'student');
+        const projectsWithUser = projects.map(project => ({
+            ...project,
+            user: studentUser._id
+        }));
+
+        await Project.create(projectsWithUser);
+
+        console.log('Projects Imported...');
+
         process.exit();
     } catch (err) {
         console.error(err);
@@ -134,6 +218,7 @@ const deleteData = async () => {
     try {
         await User.deleteMany();
         await Course.deleteMany();
+        await Project.deleteMany();
         console.log('Data Destroyed...');
         process.exit();
     } catch (err) {
