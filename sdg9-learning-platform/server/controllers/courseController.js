@@ -31,7 +31,10 @@ exports.getCourse = async (req, res, next) => {
 
         res.status(200).json({ success: true, data: course });
     } catch (err) {
-        res.status(400).json({ success: false, error: err.message });
+        if (err.name === 'CastError') {
+            return res.status(400).json({ success: false, error: `Invalid Course ID format: ${req.params.id}` });
+        }
+        res.status(500).json({ success: false, error: err.message });
     }
 };
 
