@@ -65,7 +65,7 @@ const CourseDetail = () => {
         }
     };
 
-    const submitQuiz = () => {
+    const submitQuiz = async () => {
         let correctCount = 0;
         course.quizzes.forEach((quiz, index) => {
             if (userAnswers[index] === quiz.correctAnswer) {
@@ -74,6 +74,21 @@ const CourseDetail = () => {
         });
         setScore(correctCount);
         setQuizSubmitted(true);
+
+        // Send to backend
+        try {
+            const token = localStorage.getItem('token');
+            if (token) {
+                await axios.post(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/courses/${id}/quiz`, {
+                    score: correctCount,
+                    totalQuestions: course.quizzes.length
+                }, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+            }
+        } catch (err) {
+            console.error("Failed to submit quiz score", err);
+        }
     };
 
     const resetQuiz = () => {
@@ -86,8 +101,10 @@ const CourseDetail = () => {
 
     // ... (fetchData useEffect remains same) ...
 
+    // Analytics State for Instructor
+    const [analytics, setAnalytics] = useState([]);
+
     useEffect(() => {
-        // ... fetchData logic ...
         const fetchData = async () => {
             try {
                 const token = localStorage.getItem('token');
@@ -95,10 +112,26 @@ const CourseDetail = () => {
                 setCourse(courseRes.data.data);
 
                 if (token) {
-                    const enrollRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/courses/${id}/enrollment`, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    });
-                    setEnrollment(enrollRes.data.data);
+                    // Check if current user is instructor (need to decode token or wait for user fetch)
+                    // Simplified: We try to fetch enrollment first
+                    try {
+                        const enrollRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/courses/${id}/enrollment`, {
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                        setEnrollment(enrollRes.data.data);
+                    } catch (e) {
+                        // ignore if not enrolled
+                    }
+
+                    // Try to fetch analytics (will fail if not instructor)
+                    try {
+                        const analyticsRes = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/courses/${id}/analytics`, {
+                            headers: { Authorization: `Bearer ${token}` }
+                        });
+                        setAnalytics(analyticsRes.data.data);
+                    } catch (e) {
+                        // Not instructor or error
+                    }
                 }
             } catch (err) {
                 console.error(err);
@@ -374,6 +407,38 @@ const CourseDetail = () => {
                                 <p className="text-gray-500 text-center py-4">No content modules yet.</p>
                             )}
                         </div>
+
+                        {/* Instructor Analytics Section */}
+                        {analytics.length > 0 && (
+                            <div className="glass-card rounded-2xl p-6 mt-6 sticky top-[500px] border-l-4 border-yellow-500">
+                                <h3 className="text-xl font-bold text-white mb-4">Student Progress</h3>
+                                <div className="space-y-4 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                                    {analytics.map((enr, idx) => (
+                                        <div key={idx} className="bg-gray-800/50 p-3 rounded-lg border border-gray-700">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <div>
+                                                    <p className="font-bold text-white text-sm">{enr.user ? enr.user.name : 'Unknown User'}</p>
+                                                    <p className="text-xs text-gray-400">{new Date(enr.enrolledAt).toLocaleDateString()}</p>
+                                                </div>
+                                                <span className={`text-xs px-2 py-1 rounded font-bold ${enr.isCompleted ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'}`}>
+                                                    {enr.isCompleted ? 'Completed' : 'In Progress'}
+                                                </span>
+                                            </div>
+                                            {enr.quizScores && enr.quizScores.length > 0 ? (
+                                                <div className="text-sm bg-black/30 p-2 rounded">
+                                                    <p className="text-gray-300">Latest Quiz:</p>
+                                                    <p className={`font-mono font-bold ${enr.quizScores[enr.quizScores.length - 1].score >= enr.quizScores[enr.quizScores.length - 1].totalQuestions / 2 ? 'text-green-400' : 'text-red-400'}`}>
+                                                        Score: {enr.quizScores[enr.quizScores.length - 1].score}/{enr.quizScores[enr.quizScores.length - 1].totalQuestions}
+                                                    </p>
+                                                </div>
+                                            ) : (
+                                                <p className="text-xs text-gray-500 italic">No quiz taken</p>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                         {/* Certificate Button Section remains same */}
 
 

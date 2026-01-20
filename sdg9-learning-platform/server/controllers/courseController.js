@@ -266,3 +266,69 @@ exports.getCertificate = async (req, res, next) => {
         res.status(500).json({ success: false, error: err.message });
     }
 };
+
+// @desc    Submit Quiz Result
+// @route   POST /api/courses/:id/quiz
+// @access  Private
+exports.submitQuizResult = async (req, res, next) => {
+    try {
+        const { score, totalQuestions } = req.body;
+
+        // Find or Create Enrollment
+        let enrollment = await Enrollment.findOne({ course: req.params.id, user: req.user.id });
+
+        if (!enrollment) {
+            enrollment = await Enrollment.create({
+                course: req.params.id,
+                user: req.user.id,
+                completedModules: []
+            });
+        }
+
+        // Add to quizScores
+        enrollment.quizScores.push({
+            score,
+            totalQuestions,
+            quizIndex: 0 // Default to 0 for single quiz courses for now
+        });
+
+        await enrollment.save();
+
+        res.status(200).json({
+            success: true,
+            data: enrollment
+        });
+    } catch (err) {
+        res.status(400).json({ success: false, error: err.message });
+    }
+};
+
+// @desc    Get Course Analytics (for Instructor)
+// @route   GET /api/courses/:id/analytics
+// @access  Private (Teacher/Admin)
+exports.getCourseAnalytics = async (req, res, next) => {
+    try {
+        const course = await Course.findById(req.params.id);
+
+        if (!course) {
+            return res.status(404).json({ success: false, error: 'Course not found' });
+        }
+
+        // Check ownership
+        if (course.instructor.toString() !== req.user.id && req.user.role !== 'admin') {
+            return res.status(401).json({ success: false, error: 'Not authorized to view analytics for this course' });
+        }
+
+        const enrollments = await Enrollment.find({ course: req.params.id })
+            .populate('user', 'name email')
+            .sort('-enrolledAt');
+
+        res.status(200).json({
+            success: true,
+            count: enrollments.length,
+            data: enrollments
+        });
+    } catch (err) {
+        res.status(400).json({ success: false, error: err.message });
+    }
+};

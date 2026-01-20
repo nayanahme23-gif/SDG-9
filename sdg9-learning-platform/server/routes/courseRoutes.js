@@ -31,5 +31,7 @@ router
 router.route('/:id/enrollment').get(protect, getEnrollment);
 router.route('/:id/progress').put(protect, updateProgress);
 router.route('/:id/certificate').get(protect, getCertificate);
+router.route('/:id/quiz').post(protect, require('../controllers/courseController').submitQuizResult);
+router.route('/:id/analytics').get(protect, authorize('teacher', 'admin'), require('../controllers/courseController').getCourseAnalytics);
 
 module.exports = router;

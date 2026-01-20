@@ -22,7 +22,16 @@ const enrollmentSchema = new mongoose.Schema({
     enrolledAt: {
         type: Date,
         default: Date.now
-    }
+    },
+    quizScores: [{
+        quizIndex: Number,
+        score: Number,
+        totalQuestions: Number,
+        submittedAt: {
+            type: Date,
+            default: Date.now
+        }
+    }]
 });
 
 // Prevent multiple enrollments for same course/user
