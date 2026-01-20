@@ -15,7 +15,10 @@ const app = express();
 app.use(express.json());
 
 // Enable CORS
-app.use(cors());
+app.use(cors({
+    origin: ['https://sdg-9-rqrp.vercel.app', 'http://localhost:5173', 'http://localhost:5000'],
+    credentials: true
+}));
 
 // Serve static files from uploads folder
 const path = require('path');

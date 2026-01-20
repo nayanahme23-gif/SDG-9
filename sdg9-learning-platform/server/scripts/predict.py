@@ -2,11 +2,13 @@ import sys
 import os
 import json
 import numpy as np
-import tensorflow as tf
-from tensorflow.keras.preprocessing import image
 
-# Disable TF logs
+# Disable TF logs - MUST BE BEFORE IMPORTING TENSORFLOW
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+
+import tensorflow as tf
+from tensorflow.keras.preprocessing import image 
 
 def predict(image_path):
     # Locate model - assuming it's in the sibling ai-service directory
