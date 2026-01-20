@@ -1,0 +1,31 @@
+@import "tailwindcss";
+
+@theme {
+    --color-dark-bh: #0b0c10;
+    --color-secondary-bg: #1f2833;
+    --color-accent-blue: #66fcf1;
+    --color-accent-gray: #c5c6c7;
+    --color-brand-cyan: #45a29e;
+}
+
+@layer base {
+    body {
+        @apply bg-gray-900 text-gray-100 font-sans antialiased;
+        background: radial-gradient(circle at 50% 0%, #1f2833 0%, #0b0c10 100%);
+        min-height: 100vh;
+    }
+}
+
+@layer utilities {
+    .glass {
+        @apply bg-white/10 backdrop-blur-md border border-white/10 shadow-xl;
+    }
+
+    .glass-card {
+        @apply bg-gray-800/50 backdrop-blur-lg border border-gray-700/50 shadow-2xl;
+    }
+
+    .text-gradient {
+        @apply bg-clip-text text-transparent bg-gradient-to-r from-accent-blue to-brand-cyan;
+    }
+}
